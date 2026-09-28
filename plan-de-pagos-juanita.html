@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plan de pagos para Juanita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EEF3F1;
+    --surface: #FFFFFF;
+    --ink: #1B2A28;
+    --muted: #5E706C;
+    --line: #D3DDDA;
+    --accent: #2C6E60;
+    --accent-soft: #CFE3DC;
+    --bar-track: #E3EAE8;
+    --pending: #A8641A;
+    --pending-soft: #F6E4C8;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121A19; --surface: #1A2523; --ink: #E6EFEC; --muted: #9AADA8;
+      --line: #2C3B38; --accent: #6FC1AC; --accent-soft: #23413A; --bar-track: #25322F; --pending: #E8A85C; --pending-soft: #3D2E1A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121A19; --surface: #1A2523; --ink: #E6EFEC; --muted: #9AADA8;
+    --line: #2C3B38; --accent: #6FC1AC; --accent-soft: #23413A; --bar-track: #25322F; --pending: #E8A85C; --pending-soft: #3D2E1A;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 17px; line-height: 1.55;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 20px 64px; }
+  h1, h2 { font-family: "Bricolage Grotesque", "Figtree", system-ui, sans-serif; line-height: 1.1; margin: 0; }
+  h1 { font-size: clamp(2.1rem, 6vw, 3.2rem); font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+  .lead { color: var(--muted); max-width: 60ch; margin: 14px 0 0; }
+  .amounts { font-variant-numeric: tabular-nums; }
+
+  .summary {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--line); border: 1px solid var(--line); border-radius: 14px;
+    overflow: hidden; margin: 32px 0 48px;
+  }
+  .summary div { background: var(--surface); padding: 18px 20px; }
+  .summary span { display: block; color: var(--muted); font-size: 0.9rem; }
+  .summary strong { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.6rem; font-weight: 700; }
+  @media (max-width: 680px) { .summary { grid-template-columns: 1fr 1fr; } }
+
+  section { margin-bottom: 52px; }
+  .note { color: var(--muted); margin: 0 0 20px; }
+
+  .plan { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--accent-soft); }
+  .plan li {
+    position: relative; padding: 0 0 24px 26px;
+    display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; align-items: baseline;
+  }
+  .plan li:last-child { padding-bottom: 0; }
+  .plan li::before {
+    content: counter(list-item); position: absolute; left: -14px; top: 0;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--surface); border: 2px solid var(--accent); color: var(--accent);
+    font-size: 0.8rem; font-weight: 600; display: grid; place-items: center;
+  }
+  .plan .month { font-weight: 600; font-size: 1.1rem; }
+  .plan .pay { font-weight: 600; font-size: 1.1rem; color: var(--accent); }
+  .plan .remaining { grid-column: 1 / -1; color: var(--muted); font-size: 0.93rem; }
+  .bar { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--bar-track); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+  .status {
+    font-size: 0.82rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .pending .status { background: var(--pending-soft); color: var(--pending); }
+  .paid .status { background: var(--accent-soft); color: var(--accent); }
+  .plan li.pending::before { border-color: var(--pending); color: var(--pending); }
+  .plan li.paid::before { background: var(--accent); color: var(--surface); content: "✓"; }
+  .plan li.pending .bar i { background: var(--pending); opacity: 0.55; }
+  .plan .detail { grid-column: 1 / -1; color: var(--muted); font-size: 0.93rem; }
+  .plan .remaining { color: var(--ink); font-size: 1rem; font-weight: 500; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 22px; font-size: 0.9rem; color: var(--muted); align-items: center; }
+
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+  table { width: 100%; border-collapse: collapse; min-width: 440px; }
+  th, td { text-align: left; padding: 11px 18px; border-bottom: 1px solid var(--line); }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  thead th { color: var(--muted); font-weight: 500; font-size: 0.9rem; }
+  tr.month-row td { background: var(--bg); font-weight: 600; padding-top: 14px; }
+  tr.total td { font-weight: 700; border-bottom: 0; font-size: 1.05rem; }
+  .date { color: var(--muted); white-space: nowrap; }
+
+  footer { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); padding-top: 18px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Plan de pagos para Juanita</h1>
+    <p class="lead">Resumen de lo que te debo por los préstamos y gastos de marzo a agosto de 2025, y cómo lo voy a pagar: $500 cada mes a partir de octubre de 2026.</p>
+  </header>
+
+  <div class="summary amounts">
+    <div><span>Total de la deuda</span><strong>$2,894.17</strong></div>
+    <div><span>Pagado a la fecha</span><strong>$0.00</strong></div>
+    <div><span>Pago mensual</span><strong>$500.00</strong></div>
+    <div><span>Queda saldada en</span><strong>Marzo 2027</strong></div>
+  </div>
+
+  <section>
+    <h2>Calendario de pagos</h2>
+    <p class="note">Hoy se deben $2,894.17. Cada fecha es el día del pago, y el saldo muestra lo que queda una vez hecho ese pago.</p>
+    <div class="legend"><span class="pending"><span class="status">Pendiente</span></span> todavía no se ha pagado <span class="paid"><span class="status">Pagado</span></span> ya se entregó</div>
+    <ol class="plan amounts">
+      <li class="pending"><span class="month">30 de octubre 2026</span><span class="status">Pendiente</span><span class="detail">Pago de $500.00</span><div class="bar"><i style="width:82.7%"></i></div><span class="remaining">Al 30 de octubre quedan $2,394.17</span></li>
+      <li class="pending"><span class="month">30 de noviembre 2026</span><span class="status">Pendiente</span><span class="detail">Pago de $500.00</span><div class="bar"><i style="width:65.4%"></i></div><span class="remaining">Al 30 de noviembre quedan $1,894.17</span></li>
+      <li class="pending"><span class="month">30 de diciembre 2026</span><span class="status">Pendiente</span><span class="detail">Pago de $500.00</span><div class="bar"><i style="width:48.2%"></i></div><span class="remaining">Al 30 de diciembre quedan $1,394.17</span></li>
+      <li class="pending"><span class="month">30 de enero 2027</span><span class="status">Pendiente</span><span class="detail">Pago de $500.00</span><div class="bar"><i style="width:30.9%"></i></div><span class="remaining">Al 30 de enero quedan $894.17</span></li>
+      <li class="pending"><span class="month">28 de febrero 2027</span><span class="status">Pendiente</span><span class="detail">Pago de $500.00</span><div class="bar"><i style="width:13.6%"></i></div><span class="remaining">Al 28 de febrero quedan $394.17</span></li>
+      <li class="pending"><span class="month">30 de marzo 2027</span><span class="status">Pendiente</span><span class="detail">Pago de $394.17</span><div class="bar"><i style="width:0%"></i></div><span class="remaining">Al 30 de marzo la deuda queda saldada</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Detalle de lo que se debe</h2>
+    <p class="note">Ordenado por fecha, con el subtotal de cada mes.</p>
+    <div class="table-wrap">
+      <table class="amounts">
+        <thead><tr><th>Fecha</th><th>Concepto</th><th class="num">Monto</th></tr></thead>
+        <tbody>
+          <tr class="month-row"><td colspan="2">Marzo 2025</td><td class="num">$400.00</td></tr>
+          <tr><td class="date">Marzo</td><td>Préstamo para el negocio</td><td class="num">$400.00</td></tr>
+
+          <tr class="month-row"><td colspan="2">Abril 2025</td><td class="num">$200.00</td></tr>
+          <tr><td class="date">Abril</td><td>Renta México</td><td class="num">$200.00</td></tr>
+
+          <tr class="month-row"><td colspan="2">Mayo 2025</td><td class="num">$646.91</td></tr>
+          <tr><td class="date">Mayo</td><td>Comida en México</td><td class="num">$200.00</td></tr>
+          <tr><td class="date">23 may</td><td>Bus pasaporte</td><td class="num">$100.00</td></tr>
+          <tr><td class="date">27 may</td><td>Vuelo MEX–CHI</td><td class="num">$346.91</td></tr>
+
+          <tr class="month-row"><td colspan="2">Junio 2025</td><td class="num">$776.86</td></tr>
+          <tr><td class="date">16 jun</td><td>Airbnb CDMX</td><td class="num">$176.86</td></tr>
+          <tr><td class="date">16 jun</td><td>Movimiento CDMX</td><td class="num">$200.00</td></tr>
+          <tr><td class="date">Junio</td><td>Renta de junio</td><td class="num">$200.00</td></tr>
+          <tr><td class="date">Junio</td><td>Sostenimiento de junio</td><td class="num">$200.00</td></tr>
+
+          <tr class="month-row"><td colspan="2">Julio 2025</td><td class="num">$400.00</td></tr>
+          <tr><td class="date">Julio</td><td>Renta de julio</td><td class="num">$200.00</td></tr>
+          <tr><td class="date">Julio</td><td>Sostenimiento de julio</td><td class="num">$200.00</td></tr>
+
+          <tr class="month-row"><td colspan="2">Agosto 2025</td><td class="num">$470.40</td></tr>
+          <tr><td class="date">Agosto</td><td>Renta de agosto</td><td class="num">$200.00</td></tr>
+          <tr><td class="date">Agosto</td><td>Sostenimiento de agosto</td><td class="num">$200.00</td></tr>
+          <tr><td class="date">Agosto</td><td>Efectivo entregado</td><td class="num">$60.00</td></tr>
+          <tr><td class="date">30 ago</td><td>Transvip</td><td class="num">$10.40</td></tr>
+
+          <tr class="total"><td colspan="2">Total</td><td class="num">$2,894.17</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Montos en dólares estadounidenses. Gracias, Juanita, por el apoyo.</footer>
+</main>
+</body>
+</html>
